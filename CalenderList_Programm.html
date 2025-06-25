@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="de">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link
+    href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+    rel="stylesheet">
+<meta author="Kyle Klus">
+<style>
+    * {
+        font-family: "Inter", Arial, sans-serif;
+        line-height: 1.2;
+    }
+
+    #header {
+        text-align: center;
+        width: 100vw;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #6F003C;
+        color: white;
+        height: fit-content;
+        margin-bottom: 100px;
+    }
+
+    p {
+        max-width: 650px;
+    }
+
+    italic {
+        font-style: italic;
+    }
+
+    #date-picker {
+        display: flex;
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+        width: 300px;
+        margin-bottom: 10px;
+    }
+
+    #file-input-page {
+        display: flex;
+        flex-direction: column;
+        width: 100vw;
+    }
+
+    #file-input {
+        width: 100vw;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        overflow: hidden;
+        gap: 8px;
+    }
+
+    #calender-input {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 600px;
+    }
+
+    #file-input-label {
+        max-width: 35ch;
+        display: block;
+        max-height: 1rem;
+        word-break: keep-all;
+        word-wrap: break-word;
+        text-wrap: nowrap;
+        text-overflow: ellipsis;
+        overflow: hidden;
+    }
+
+    p {
+        margin: 0;
+    }
+
+    table {
+        border-spacing: 0px;
+    }
+
+    th {
+        background-color: #6F003C;
+        color: white;
+    }
+
+    th>div {
+        display: flex;
+        justify-content: flex-start;
+        padding: 8px;
+    }
+
+    td {
+        padding: 16px 8px;
+        vertical-align: top;
+    }
+
+    tr:not(.is-new-day) td {
+        border-top: 1px solid #6F003C;
+    }
+
+    td.event-time {
+        white-space: nowrap;
+    }
+
+
+    #calender-input ol {
+        padding-left: 0;
+    }
+
+    #calender-input li {
+        background: #eee;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        list-style-type: none;
+        border: 1px solid black;
+    }
+
+    #calender-input img {
+        height: 64px;
+        order: 1;
+    }
+
+    #calender-input p {
+        line-height: 32px;
+        padding-left: 10px;
+    }
+
+    #calender-input label,
+    #calender-input button {
+        background-color: #6F003C;
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px ridge black;
+        font-size: 0.8rem;
+        height: auto;
+        color: white;
+    }
+
+    #calender-input label:hover,
+    #calender-input button:hover {
+        background-color: #a40259;
+        color: white;
+    }
+
+    #calender-input label:active,
+    #calender-input button:active {
+        background-color: #b05686;
+        color: white;
+    }
+</style>
+
+<body>
+    <div id="file-input-page">
+        <div id="header">
+            <h2>Kyle&apos;s Kalenderlisten-Generator</h2>
+        </div>
+        <div id="file-input">
+            <p>
+                <italic>Dieses Tool erstellt eine HTML-Tabelle aus einer ICS Kalenderdatei. Lade die ICS Datei hoch und
+                    klicke auf "Umwandeln". Um die Listenansicht als PDF zu erhalten, drucke die Tabelle aus als PDF
+                    aus.
+                    Dies kann einfach über die Tastenkombination "Strg + P" erfolgen.</italic>
+                <br /><br /><br /><br />
+            </p>
+            <p>Hier kannst du einen Zeitraum auswählen, in dem die Kalenderliste erstellt werden soll:</p>
+            <div id="date-picker">
+                <input type="date" name="start-date-picker-input" id="start-date-picker-input">
+                <p> bis </p>
+                <input type="date" name="end-date-picker-input" id="end-date-picker-input">
+            </div>
+
+            <div id="calender-input">
+                <label id="file-input-label" for="calender">Bitte wähle eine ICS Datei aus</label>
+                <input type="file" id="calender" name="calender" accept=".ics" style="display: none;">
+                <button id="reset-button">Zurücksetzen</button><button id="convert-button">Umwandeln</button>
+            </div>
+        </div>
+
+    </div>
+    <div id="calender-table" style="display: none;">
+        <table>
+            <thead>
+                <tr id="calender-table-header"></tr>
+                <th>
+                    <div>Uhrzeit</div>
+                </th>
+                <th>
+                    <div>Titel</div>
+                </th>
+                <th>
+                    <div>Ort</div>
+                </th>
+                <th>
+                    <div>Beschreibung</div>
+                </th>
+                </tr>
+            </thead>
+            <tbody id="calender-table-body">
+            </tbody>
+        </table>
+    </div>
+</body>
+<script>
+    document.getElementById("calender").addEventListener("change", function (event) {
+        event.preventDefault();
+        let files = document.getElementById("calender").files;
+        let label = document.getElementById("file-input-label");
+
+        if (files.length === 0) {
+            label.innerHTML = "Bitte wähle eine ICS Datei aus";
+            return;
+        }
+
+        const file = files[0];
+        label.innerHTML = file.name;
+    });
+</script>
+<script>
+    document.getElementById("reset-button").addEventListener("click", function (event) {
+        event.preventDefault();
+        document.getElementById("calender").value = '';
+        let label = document.getElementById("file-input-label");
+
+        label.innerHTML = "Bitte wähle eine ICS Datei aus";
+        document.getElementById("start-date-picker-input").value = '';
+        document.getElementById("end-date-picker-input").value = '';
+    });
+</script>
+<script type="module">
+    import ICAL from "https://unpkg.com/ical.js/dist/ical.min.js";
+    import moment from 'https://cdn.jsdelivr.net/npm/moment@2.30.1/+esm';
+
+    const TITLE_TAG = "summary";
+    const DESCRIPTION_TAG = "description";
+    const LOCATION_TAG = "location";
+    const START_TAG = "dtstart";
+    const END_TAG = "dtend";
+    const DATESTAMP_TAG = "dtstamp";
+
+    let cutOffStartDate = '';
+    let cutOffEndDate = ''; // Cut off events that end before this date
+
+    document.getElementById("start-date-picker-input").addEventListener("change", function (event) {
+        event.preventDefault();
+        cutOffStartDate = event.target.value;
+    });
+
+    document.getElementById("end-date-picker-input").addEventListener("change", function (event) {
+        event.preventDefault();
+        cutOffEndDate = event.target.value;
+    });
+
+    document.getElementById("convert-button").addEventListener("click", () => {
+        event.preventDefault();
+        let file = document.getElementById("calender").files[0];
+        if (!file) { return; }
+
+        const reader = new FileReader();
+        reader.onload = function (e) {
+            convertToHTMLTable(e.target.result);
+        };
+        reader.readAsText(file);
+    });
+
+    function convertToHTMLTable(result) {
+        const icalContent = result;
+        const jcalEvents = ICAL.parse(icalContent)[2];
+        let eventList = [];
+
+        for (let i = 1; i < jcalEvents.length; i++) {
+            const event = jcalEvents[i];
+            eventList.push(parseJCalEvent(event));
+        }
+
+        eventList = sortAndClean(eventList);
+
+        buildTable(eventList);
+    }
+
+    function parseJCalEvent(event) {
+        let title = "Kein Titel";
+        let description = "Keine Beschreibung";
+        let location = "Kein Ort";
+        let start = "Kein Start";
+        let end = "Kein Ende";
+        let dateStamp = "Kein Datum";
+
+        event[1].forEach(function (item) {
+            switch (item[0]) {
+                case TITLE_TAG:
+                    title = item[3];
+                    break;
+                case DESCRIPTION_TAG:
+                    description = item[3];
+                    break;
+                case LOCATION_TAG:
+                    location = item[3];
+                    break;
+                case START_TAG:
+                    start = item[3];
+                    break;
+                case END_TAG:
+                    end = item[3];
+                    break;
+                case DATESTAMP_TAG:
+                    dateStamp = item[3];
+                    break;
+                default:
+                    break;
+            }
+        });
+
+        const eventObject = {
+            title: title,
+            description: description,
+            location: location,
+            start: start,
+            startDate: start.indexOf("T") !== -1 ? start.split("T")[0] : undefined,
+            startTime: start.indexOf("T") !== -1 ? start.split("T")[1] : undefined,
+            end: end,
+            endDate: end.indexOf("T") !== -1 ? end.split("T")[0] : undefined,
+            endTime: end.indexOf("T") !== -1 ? end.split("T")[1] : undefined,
+            dateStamp: dateStamp,
+            jCalEvent: event
+        }
+
+        return eventObject;
+    }
+
+    function sortAndClean(eventList) {
+        // Sort events by start time
+        let cleanEventList = eventList.sort(function (a, b) {
+            const aStart = moment(a.start);
+            const bStart = moment(b.start);
+            return aStart.diff(bStart);
+        });
+
+        // Remove events that end before the cut off date
+        cleanEventList = cleanEventList.filter(function (event) {
+            const start = moment(event.start).startOf("day");
+            const end = moment(event.end).endOf("day");
+
+            let keepEvent = true;
+
+            if (cutOffStartDate !== '') {
+                keepEvent = end.isSameOrAfter(moment(cutOffStartDate));
+            }
+
+            if (cutOffEndDate !== '') {
+                keepEvent = keepEvent && start.isSameOrBefore(moment(cutOffEndDate));
+            }
+
+            return keepEvent;
+        });
+
+        return cleanEventList;
+    }
+
+    function buildTable(eventList) {
+        // Set visibility of file input and calender table
+        const fileInput = document.getElementById("file-input-page");
+        fileInput.style.display = "none";
+
+        const tableContainer = document.getElementById("calender-table");
+        tableContainer.style.display = "block";
+
+        // Clear table body
+        const tableBody = document.getElementById("calender-table-body");
+        tableBody.innerHTML = "";
+
+        // Build table rows
+        let currentDate = undefined;
+        eventList.forEach(function (eventItem) {
+            const isWholeDayEvent = eventItem.startTime === undefined || eventItem.endTime === undefined;
+            const isNewDay = currentDate === undefined ||
+                currentDate !== eventItem.startDate;
+
+            const row = document.createElement("tr");
+            row.classList.add("event-row");
+
+            if (isNewDay) {
+                row.classList.add("is-new-day");
+            }
+
+            if (isWholeDayEvent) {
+                row.classList.add("whole-day-event-row");
+            }
+
+            // Set event time
+            const newStartTimeComponents = isWholeDayEvent ? ["00", "00"] : eventItem.startTime.split(":");
+            const newStartTime = newStartTimeComponents[0] + ":" + newStartTimeComponents[1];
+            const newEndTimeComponents = isWholeDayEvent ? ["23", "59"] : eventItem.endTime.split(":");
+            const newEndTime = newEndTimeComponents[0] + ":" + newEndTimeComponents[1];
+
+            // Add date row if necessary
+            if (isNewDay) {
+                currentDate = eventItem.startDate;
+                const dateRow = document.createElement("tr");
+                dateRow.innerHTML = `
+                    <tr class="new-date-row"><th colspan="4"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th></tr>
+                `;
+                tableBody.appendChild(dateRow);
+            }
+
+            // Add event row
+            row.innerHTML = `
+                <td class="event-time">${isWholeDayEvent ? '' : newStartTime + " - " + newEndTime}</td>
+                <td class="event-title">${eventItem.title}</td>
+                <td class="event-location">${eventItem.location}</td>
+                <td class="event-description">${eventItem.description}</td>
+            `;
+            tableBody.appendChild(row);
+        });
+    }
+</script>
+
+</html>
