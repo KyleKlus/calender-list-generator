@@ -12,6 +12,23 @@
         line-height: 1.2;
     }
 
+    table {
+        page-break-inside: auto
+    }
+
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto
+    }
+
+    thead {
+        display: table-header-group
+    }
+
+    tfoot {
+        display: table-footer-group
+    }
+
     #header {
         text-align: center;
         width: 100vw;
@@ -83,7 +100,7 @@
     }
 
     table {
-        border-spacing: 0px;
+        border-spacing: 0px 5px;
     }
 
     th {
@@ -104,6 +121,20 @@
 
     tr:not(.is-new-day) td {
         border-top: 1px solid #6F003C;
+    }
+
+    tr.new-day-row th {
+        border-radius: 4px;
+    }
+
+    thead th:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+
+    thead th:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
     }
 
     td.event-time {
@@ -189,19 +220,19 @@
     <div id="calender-table" style="display: none;">
         <table>
             <thead>
-                <tr id="calender-table-header"></tr>
-                <th>
-                    <div>Uhrzeit</div>
-                </th>
-                <th>
-                    <div>Titel</div>
-                </th>
-                <th>
-                    <div>Ort</div>
-                </th>
-                <th>
-                    <div>Beschreibung</div>
-                </th>
+                <tr id="calender-table-header">
+                    <th>
+                        <div>Uhrzeit</div>
+                    </th>
+                    <th>
+                        <div>Titel</div>
+                    </th>
+                    <th>
+                        <div>Ort</div>
+                    </th>
+                    <th>
+                        <div>Beschreibung</div>
+                    </th>
                 </tr>
             </thead>
             <tbody id="calender-table-body">
@@ -209,6 +240,16 @@
         </table>
     </div>
 </body>
+<script>
+    window.addEventListener("load", function () {
+        document.getElementById("calender").value = '';
+        let label = document.getElementById("file-input-label");
+
+        label.innerHTML = "Bitte wähle eine ICS Datei aus";
+        document.getElementById("start-date-picker-input").value = '';
+        document.getElementById("end-date-picker-input").value = '';
+    });
+</script>
 <script>
     document.getElementById("calender").addEventListener("change", function (event) {
         event.preventDefault();
@@ -245,6 +286,7 @@
     const START_TAG = "dtstart";
     const END_TAG = "dtend";
     const DATESTAMP_TAG = "dtstamp";
+    const RRULE_TAG = "rrule";
 
     let cutOffStartDate = '';
     let cutOffEndDate = ''; // Cut off events that end before this date
@@ -273,12 +315,15 @@
 
     function convertToHTMLTable(result) {
         const icalContent = result;
-        const jcalEvents = ICAL.parse(icalContent)[2];
+        const vcalendar = new ICAL.Component(ICAL.parse(icalContent));
+        const vevents = vcalendar.getAllSubcomponents("vevent");
+
         let eventList = [];
 
-        for (let i = 1; i < jcalEvents.length; i++) {
-            const event = jcalEvents[i];
-            eventList.push(parseJCalEvent(event));
+        for (let i = 1; i < vevents.length; i++) {
+            const vevent = vevents[i];
+
+            eventList = eventList.concat(parseJCalEvent(vevent));
         }
 
         eventList = sortAndClean(eventList);
@@ -286,54 +331,61 @@
         buildTable(eventList);
     }
 
-    function parseJCalEvent(event) {
-        let title = "Kein Titel";
-        let description = "Keine Beschreibung";
-        let location = "Kein Ort";
-        let start = "Kein Start";
-        let end = "Kein Ende";
-        let dateStamp = "Kein Datum";
+    function parseJCalEvent(vevent) {
+        var event = new ICAL.Event(vevent);
 
-        event[1].forEach(function (item) {
-            switch (item[0]) {
-                case TITLE_TAG:
-                    title = item[3];
-                    break;
-                case DESCRIPTION_TAG:
-                    description = item[3];
-                    break;
-                case LOCATION_TAG:
-                    location = item[3];
-                    break;
-                case START_TAG:
-                    start = item[3];
-                    break;
-                case END_TAG:
-                    end = item[3];
-                    break;
-                case DATESTAMP_TAG:
-                    dateStamp = item[3];
-                    break;
-                default:
-                    break;
-            }
-        });
+        const eventList = [];
 
-        const eventObject = {
-            title: title,
-            description: description,
-            location: location,
-            start: start,
-            startDate: start.indexOf("T") !== -1 ? start.split("T")[0] : undefined,
-            startTime: start.indexOf("T") !== -1 ? start.split("T")[1] : undefined,
-            end: end,
-            endDate: end.indexOf("T") !== -1 ? end.split("T")[0] : undefined,
-            endTime: end.indexOf("T") !== -1 ? end.split("T")[1] : undefined,
-            dateStamp: dateStamp,
-            jCalEvent: event
+        let eventObject = {
+            title: event.summary === undefined || event.summary === null ? "Kein Titel" : event.summary,
+            description: event.description === undefined || event.description === null ? "Keine Beschreibung" : event.description,
+            location: event.location === undefined || event.location === null ? "Kein Ort" : event.location,
+            start: event.startDate !== undefined ? moment(event.startDate.toJSDate()).format("YYYY-MM-DDTHH:mm:ss") : 'Kein Start',
+            startDate: event.startDate !== undefined && !event.startDate.isDate ? moment(event.startDate.toJSDate()).format("YYYY-MM-DD") : undefined,
+            startTime: event.startDate !== undefined && !event.startDate.isDate ? moment(event.startDate.toJSDate()).format("HH:mm:ss") : undefined,
+            end: event.endDate !== undefined ? moment(event.endDate.toJSDate()).format("YYYY-MM-DDTHH:mm:ss") : 'Kein Ende',
+            endDate: event.endDate !== undefined && !event.endDate.isDate ? moment(event.endDate.toJSDate()).format("YYYY-MM-DD") : undefined,
+            endTime: event.endDate !== undefined && !event.endDate.isDate ? moment(event.endDate.toJSDate()).format("HH:mm:ss") : undefined,
+            jCalEvent: vevent
         }
 
-        return eventObject;
+        eventList.push(eventObject);
+
+        if (event.isRecurring()) {
+            console.log(event.isRecurring());
+            let expand = new ICAL.RecurExpansion({
+                component: vevent,
+                dtstart: vevent.getFirstPropertyValue('dtstart')
+            });
+
+            let rangeStart = ICAL.Time.fromString(cutOffStartDate !== '' ? cutOffStartDate : moment(event.startDate.toJSDate()).format("YYYY-MM-DD"));
+            let rangeEnd = ICAL.Time.fromString(cutOffEndDate !== '' ? cutOffEndDate : moment().add(1, 'year').format("YYYY-MM-DD"));
+
+            let next = expand.next()
+            for (let next = expand.next(); next && next.compare(rangeEnd) < 0; next = expand.next()) {
+                if (next.compare(rangeStart) < 0) {
+                    continue;
+                }
+                console.log(eventObject.start, moment(next.toJSDate()).format("YYYY-MM-DDTHH:mm:ss"), next.duration, next);
+
+                const newEventObject = {
+                    title: eventObject.title,
+                    description: eventObject.description,
+                    location: eventObject.location,
+                    start: moment(next.toJSDate()).format("YYYY-MM-DDTHH:mm:ss"),
+                    startDate: !event.isDate ? moment(next.toJSDate()).format("YYYY-MM-DD") : undefined,
+                    startTime: !event.isDate ? moment(next.toJSDate()).format("HH:mm:ss") : undefined,
+                    end: moment(next.toJSDate()).hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("YYYY-MM-DDTHH:mm:ss"),
+                    endDate: !event.isDate ? moment(next.toJSDate()).format("YYYY-MM-DD") : undefined,
+                    endTime: !event.isDate ? moment(next.toJSDate()).hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("HH:mm:ss") : undefined,
+                    jCalEvent: vevent
+                }
+
+                eventList.push(newEventObject);
+            }
+        }
+
+        return eventList;
     }
 
     function sortAndClean(eventList) {
@@ -341,7 +393,15 @@
         let cleanEventList = eventList.sort(function (a, b) {
             const aStart = moment(a.start);
             const bStart = moment(b.start);
-            return aStart.diff(bStart);
+            if (aStart.isBefore(bStart)) {
+                return -1;
+            }
+            if (aStart.isAfter(bStart)) {
+                return 1;
+            }
+            if (aStart.isSame(bStart)) {
+                return 0;
+            }
         });
 
         // Remove events that end before the cut off date
@@ -405,8 +465,9 @@
             if (isNewDay) {
                 currentDate = eventItem.startDate;
                 const dateRow = document.createElement("tr");
+                dateRow.classList.add("new-day-row");
                 dateRow.innerHTML = `
-                    <tr class="new-date-row"><th colspan="4"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th></tr>
+                   <th colspan="4"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th>
                 `;
                 tableBody.appendChild(dateRow);
             }
