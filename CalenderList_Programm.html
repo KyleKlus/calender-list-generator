@@ -315,12 +315,13 @@
 
     function convertToHTMLTable(result) {
         const icalContent = result;
-        const vcalendar = new ICAL.Component(ICAL.parse(icalContent));
+        const parsedICalContent = ICAL.parse(icalContent);
+        const vcalendar = new ICAL.Component(parsedICalContent);
         const vevents = vcalendar.getAllSubcomponents("vevent");
 
         let eventList = [];
 
-        for (let i = 1; i < vevents.length; i++) {
+        for (let i = 0; i < vevents.length; i++) {
             const vevent = vevents[i];
 
             eventList = eventList.concat(parseJCalEvent(vevent));
@@ -352,7 +353,6 @@
         eventList.push(eventObject);
 
         if (event.isRecurring()) {
-            console.log(event.isRecurring());
             let expand = new ICAL.RecurExpansion({
                 component: vevent,
                 dtstart: vevent.getFirstPropertyValue('dtstart')
@@ -366,7 +366,6 @@
                 if (next.compare(rangeStart) < 0) {
                     continue;
                 }
-                console.log(eventObject.start, moment(next.toJSDate()).format("YYYY-MM-DDTHH:mm:ss"), next.duration, next);
 
                 const newEventObject = {
                     title: eventObject.title,
