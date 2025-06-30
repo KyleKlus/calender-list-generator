@@ -10,23 +10,14 @@
     * {
         font-family: "Inter", Arial, sans-serif;
         line-height: 1.2;
+        --primary-color: #6F003C;
+        --secondary-color: #a40259;
+        --tertiary-color: #b05686;
     }
 
-    table {
-        page-break-inside: auto
-    }
-
-    tr {
-        page-break-inside: avoid;
-        page-break-after: auto
-    }
-
-    thead {
-        display: table-header-group
-    }
-
-    tfoot {
-        display: table-footer-group
+    body {
+        margin: 0;
+        padding: 0;
     }
 
     #header {
@@ -36,7 +27,7 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background-color: #6F003C;
+        background-color: var(--primary-color);
         color: white;
         height: fit-content;
         margin-bottom: 100px;
@@ -48,6 +39,64 @@
 
     italic {
         font-style: italic;
+    }
+
+    #calender-input {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 8px;
+        width: 600px;
+    }
+
+    #calender-input li {
+        background: #eee;
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 10px;
+        list-style-type: none;
+        border: 1px solid black;
+    }
+
+    #calender-input img {
+        height: 64px;
+        order: 1;
+    }
+
+    #calender-input p {
+        line-height: 32px;
+        padding-left: 10px;
+    }
+
+    #calender-input label,
+    #calender-input button {
+        background-color: var(--primary-color);
+        padding: 5px 10px;
+        border-radius: 5px;
+        border: 1px ridge black;
+        font-size: 0.8rem;
+        height: auto;
+        color: white;
+    }
+
+    #calender-input label:hover,
+    #calender-input button:hover {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+
+    #calender-input label:active,
+    #calender-input button:active {
+        background-color: var(--tertiary-color);
+        color: white;
+    }
+
+    #calender-input ol {
+        padding-left: 0;
+    }
+
+    p {
+        margin: 0;
     }
 
     #date-picker {
@@ -76,14 +125,6 @@
         gap: 8px;
     }
 
-    #calender-input {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 8px;
-        width: 600px;
-    }
-
     #file-input-label {
         max-width: 35ch;
         display: block;
@@ -95,16 +136,32 @@
         overflow: hidden;
     }
 
-    p {
-        margin: 0;
+    table {
+        border-spacing: 0px 8px;
+        padding: 0 8px 8px 8px;
     }
 
-    table {
-        border-spacing: 0px 5px;
+    @media print {
+        table {
+            page-break-inside: auto
+        }
+
+        tr.day-header-row {
+            page-break-inside: avoid;
+            page-break-after: auto
+        }
+    }
+
+    thead {
+        display: table-header-group
+    }
+
+    tfoot {
+        display: table-footer-group
     }
 
     th {
-        background-color: #6F003C;
+        background-color: var(--primary-color);
         color: white;
     }
 
@@ -114,78 +171,31 @@
         padding: 8px;
     }
 
+    tr.day-header-row th {
+        background-color: var(--primary-color);
+    }
+
+    tr.day-header-row th:first-child {
+        border-top-left-radius: 4px;
+        border-bottom-left-radius: 4px;
+    }
+
+    tr.day-header-row th:last-child {
+        border-top-right-radius: 4px;
+        border-bottom-right-radius: 4px;
+    }
+
     td {
         padding: 16px 8px;
         vertical-align: top;
     }
 
     tr:not(.is-new-day) td {
-        border-top: 1px solid #6F003C;
-    }
-
-    tr.new-day-row th {
-        border-radius: 4px;
-    }
-
-    thead th:first-child {
-        border-top-left-radius: 4px;
-        border-bottom-left-radius: 4px;
-    }
-
-    thead th:last-child {
-        border-top-right-radius: 4px;
-        border-bottom-right-radius: 4px;
+        border-top: 1px solid var(--primary-color);
     }
 
     td.event-time {
         white-space: nowrap;
-    }
-
-
-    #calender-input ol {
-        padding-left: 0;
-    }
-
-    #calender-input li {
-        background: #eee;
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 10px;
-        list-style-type: none;
-        border: 1px solid black;
-    }
-
-    #calender-input img {
-        height: 64px;
-        order: 1;
-    }
-
-    #calender-input p {
-        line-height: 32px;
-        padding-left: 10px;
-    }
-
-    #calender-input label,
-    #calender-input button {
-        background-color: #6F003C;
-        padding: 5px 10px;
-        border-radius: 5px;
-        border: 1px ridge black;
-        font-size: 0.8rem;
-        height: auto;
-        color: white;
-    }
-
-    #calender-input label:hover,
-    #calender-input button:hover {
-        background-color: #a40259;
-        color: white;
-    }
-
-    #calender-input label:active,
-    #calender-input button:active {
-        background-color: #b05686;
-        color: white;
     }
 </style>
 
@@ -219,22 +229,6 @@
     </div>
     <div id="calender-table" style="display: none;">
         <table>
-            <thead>
-                <tr id="calender-table-header">
-                    <th>
-                        <div>Uhrzeit</div>
-                    </th>
-                    <th>
-                        <div>Titel</div>
-                    </th>
-                    <th>
-                        <div>Ort</div>
-                    </th>
-                    <th>
-                        <div>Beschreibung</div>
-                    </th>
-                </tr>
-            </thead>
             <tbody id="calender-table-body">
             </tbody>
         </table>
@@ -358,12 +352,19 @@
                 dtstart: vevent.getFirstPropertyValue('dtstart')
             });
 
-            let rangeStart = ICAL.Time.fromString(cutOffStartDate !== '' ? cutOffStartDate : moment(event.startDate.toJSDate()).format("YYYY-MM-DD"));
-            let rangeEnd = ICAL.Time.fromString(cutOffEndDate !== '' ? cutOffEndDate : moment().add(1, 'year').format("YYYY-MM-DD"));
+            let rangeStart = cutOffStartDate !== '' ? moment(cutOffStartDate).startOf("day") : moment(event.startDate.toJSDate()).startOf("day");
+            let rangeEnd = cutOffEndDate !== '' ? moment(cutOffEndDate).endOf("day") : moment().add(1, 'year').endOf("day");
 
             let next = expand.next()
-            for (let next = expand.next(); next && next.compare(rangeEnd) < 0; next = expand.next()) {
-                if (next.compare(rangeStart) < 0) {
+            let nextDate = moment(next.toJSDate());
+
+            while (next && nextDate.isBefore(rangeEnd)) {
+                if (nextDate.isBefore(rangeStart)) {
+                    next = expand.next();
+                    if (next === undefined) {
+                        break;
+                    }
+                    nextDate = moment(next.toJSDate());
                     continue;
                 }
 
@@ -371,16 +372,19 @@
                     title: eventObject.title,
                     description: eventObject.description,
                     location: eventObject.location,
-                    start: moment(next.toJSDate()).format("YYYY-MM-DDTHH:mm:ss"),
-                    startDate: !event.isDate ? moment(next.toJSDate()).format("YYYY-MM-DD") : undefined,
-                    startTime: !event.isDate ? moment(next.toJSDate()).format("HH:mm:ss") : undefined,
-                    end: moment(next.toJSDate()).hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("YYYY-MM-DDTHH:mm:ss"),
-                    endDate: !event.isDate ? moment(next.toJSDate()).format("YYYY-MM-DD") : undefined,
-                    endTime: !event.isDate ? moment(next.toJSDate()).hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("HH:mm:ss") : undefined,
+                    start: nextDate.format("YYYY-MM-DDTHH:mm:ss"),
+                    startDate: !event.isDate ? nextDate.format("YYYY-MM-DD") : undefined,
+                    startTime: !event.isDate ? nextDate.format("HH:mm:ss") : undefined,
+                    end: nextDate.hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("YYYY-MM-DDTHH:mm:ss"),
+                    endDate: !event.isDate ? nextDate.format("YYYY-MM-DD") : undefined,
+                    endTime: !event.isDate ? nextDate.hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("HH:mm:ss") : undefined,
                     jCalEvent: vevent
                 }
 
                 eventList.push(newEventObject);
+
+                next = expand.next();
+                nextDate = moment(next.toJSDate());
             }
         }
 
@@ -464,9 +468,12 @@
             if (isNewDay) {
                 currentDate = eventItem.startDate;
                 const dateRow = document.createElement("tr");
-                dateRow.classList.add("new-day-row");
+                dateRow.classList.add("day-header-row");
                 dateRow.innerHTML = `
-                   <th colspan="4"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th>
+                   <th colspan="1"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th>
+                   <th colspan="1"><div>Titel</div></th>
+                   <th colspan="1"><div>Ort</div></th>
+                   <th colspan="1"><div>Beschreibung</div></th>
                 `;
                 tableBody.appendChild(dateRow);
             }
