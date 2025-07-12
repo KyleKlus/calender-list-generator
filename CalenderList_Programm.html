@@ -139,6 +139,7 @@
     table {
         border-spacing: 0px 8px;
         padding: 0 8px 8px 8px;
+        width: 100%;
     }
 
     @media print {
@@ -271,8 +272,10 @@
     });
 </script>
 <script type="module">
-    import ICAL from "https://unpkg.com/ical.js/dist/ical.min.js";
+    import ical from "https://unpkg.com/ical.js/dist/ical.min.js";
     import moment from 'https://cdn.jsdelivr.net/npm/moment@2.30.1/+esm';
+    import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@2.3.0/+esm';
+    import { rrulestr } from 'https://cdn.jsdelivr.net/npm/rrule@2.6.8/+esm';
 
     const TITLE_TAG = "summary";
     const DESCRIPTION_TAG = "description";
@@ -282,35 +285,99 @@
     const DATESTAMP_TAG = "dtstamp";
     const RRULE_TAG = "rrule";
 
-    let cutOffStartDate = '';
-    let cutOffEndDate = ''; // Cut off events that end before this date
+    // Cut off events that are not within bounds
+    let cutOffStartDateString = '';
+    let cutOffEndDateString = '';
+    let cutOffStartDate = undefined;
+    let cutOffEndDate = undefined;
 
-    document.getElementById("start-date-picker-input").addEventListener("change", function (event) {
-        event.preventDefault();
-        cutOffStartDate = event.target.value;
+    window.addEventListener("load", function () {
+        resetPage();
     });
 
-    document.getElementById("end-date-picker-input").addEventListener("change", function (event) {
-        event.preventDefault();
-        cutOffEndDate = event.target.value;
-    });
+    const calenderInput = document.getElementById("calender");
+    const label = document.getElementById("file-input-label");
 
-    document.getElementById("convert-button").addEventListener("click", () => {
-        event.preventDefault();
-        let file = document.getElementById("calender").files[0];
-        if (!file) { return; }
+    if (calenderInput) {
+        calenderInput.addEventListener("change", function (event) {
+            event.preventDefault();
+            let files = event.target.files;
 
-        const reader = new FileReader();
-        reader.onload = function (e) {
-            convertToHTMLTable(e.target.result);
-        };
-        reader.readAsText(file);
-    });
+            if (!files || !label) { return }
+
+            if (files.length === 0) {
+                label.innerHTML = "Bitte wähle eine ICS Datei aus";
+                return;
+            }
+
+            const file = files[0];
+            label.innerHTML = `Ausgewählt: ${file.name}`;
+        });
+    }
+
+    const startDatePickerInput = document.getElementById("start-date-picker-input");
+    if (startDatePickerInput) {
+        startDatePickerInput.addEventListener("change", function (event) {
+            event.preventDefault();
+            if (event.target !== null) {
+                cutOffStartDateString = event.target.value;
+                cutOffStartDate = moment(cutOffStartDateString).startOf("day");
+            }
+
+        });
+    }
+
+    const endDatePickerInput = document.getElementById("end-date-picker-input");
+    if (endDatePickerInput) {
+        endDatePickerInput.addEventListener("change", function (event) {
+            event.preventDefault();
+            if (event.target === null) { return; }
+            cutOffEndDateString = event.target.value;
+            cutOffEndDate = moment(cutOffEndDateString).endOf("day");
+        });
+    }
+
+    const resetButton = document.getElementById("reset-button");
+    if (resetButton) {
+        resetButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            resetPage();
+        });
+    }
+
+    const convertButton = document.getElementById("convert-button");
+    if (convertButton) {
+        convertButton.addEventListener("click", function (event) {
+            event.preventDefault();
+            if (calenderInput === null || calenderInput.files === null) { return; }
+
+            let file = calenderInput.files[0];
+            if (!file) { return; }
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                convertToHTMLTable(e.target.result);
+            };
+            reader.readAsText(file);
+        });
+    }
+
+    function resetPage() {
+        calenderInput.value = '';
+
+        label.innerHTML = "Bitte wähle eine ICS Datei aus";
+        startDatePickerInput.value = '';
+        cutOffStartDate = undefined;
+        cutOffStartDateString = '';
+        endDatePickerInput.value = '';
+        cutOffEndDateString = '';
+        cutOffEndDate = undefined;
+    }
 
     function convertToHTMLTable(result) {
         const icalContent = result;
-        const parsedICalContent = ICAL.parse(icalContent);
-        const vcalendar = new ICAL.Component(parsedICalContent);
+        const parsedICalContent = ical.parse(icalContent);
+        const vcalendar = new ical.Component(parsedICalContent);
         const vevents = vcalendar.getAllSubcomponents("vevent");
 
         let eventList = [];
@@ -327,75 +394,171 @@
     }
 
     function parseJCalEvent(vevent) {
-        var event = new ICAL.Event(vevent);
+        const event = new ical.Event(vevent);
 
-        const eventList = [];
+        let eventList = [];
+        // TODO: Fix recurring events with exception dates
 
-        let eventObject = {
+        const eventLengthInDays = moment(event.endDate.toJSDate()).diff(moment(event.startDate.toJSDate()), 'days');
+
+        const baseEventObject = {
             title: event.summary === undefined || event.summary === null ? "Kein Titel" : event.summary,
             description: event.description === undefined || event.description === null ? "Keine Beschreibung" : event.description,
             location: event.location === undefined || event.location === null ? "Kein Ort" : event.location,
-            start: event.startDate !== undefined ? moment(event.startDate.toJSDate()).format("YYYY-MM-DDTHH:mm:ss") : 'Kein Start',
-            startDate: event.startDate !== undefined && !event.startDate.isDate ? moment(event.startDate.toJSDate()).format("YYYY-MM-DD") : undefined,
-            startTime: event.startDate !== undefined && !event.startDate.isDate ? moment(event.startDate.toJSDate()).format("HH:mm:ss") : undefined,
-            end: event.endDate !== undefined ? moment(event.endDate.toJSDate()).format("YYYY-MM-DDTHH:mm:ss") : 'Kein Ende',
-            endDate: event.endDate !== undefined && !event.endDate.isDate ? moment(event.endDate.toJSDate()).format("YYYY-MM-DD") : undefined,
-            endTime: event.endDate !== undefined && !event.endDate.isDate ? moment(event.endDate.toJSDate()).format("HH:mm:ss") : undefined,
+            start: undefined,
+            startDate: undefined,
+            startTime: undefined,
+            end: undefined,
+            endDate: undefined,
+            endTime: undefined,
+            isDate: false,
             jCalEvent: vevent
-        }
+        };
 
-        eventList.push(eventObject);
+        const newEventObjects = buildEventObjects(
+            baseEventObject,
+            moment(event.startDate.toJSDate()),
+            moment(event.endDate.toJSDate()),
+            eventLengthInDays,
+            event.startDate.isDate
+        )
+
+        // console.log(baseEventObject.title, eventLengthInDays, newEventObjects, newEventObjects.length, event.startDate.isDate);
+
+        eventList = eventList.concat(newEventObjects);
 
         if (event.isRecurring()) {
-            let expand = new ICAL.RecurExpansion({
+            let expand = new ical.RecurExpansion({
                 component: vevent,
                 dtstart: vevent.getFirstPropertyValue('dtstart')
             });
 
-            let rangeStart = cutOffStartDate !== '' ? moment(cutOffStartDate).startOf("day") : moment(event.startDate.toJSDate()).startOf("day");
-            let rangeEnd = cutOffEndDate !== '' ? moment(cutOffEndDate).endOf("day") : moment().add(1, 'year').endOf("day");
+            let rangeStart = cutOffStartDate !== undefined ? cutOffStartDate : moment(event.startDate.toJSDate()).startOf("day");
+            let rangeEnd = cutOffEndDate !== undefined ? cutOffEndDate : moment().add(1, 'year').endOf("day");
 
             let next = expand.next()
-            let nextDate = moment(next.toJSDate());
+            let originalEndDate = moment(event.endDate.toJSDate());
+            let nextStartDate = moment(next.toJSDate());
+            let nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
 
-            while (next && nextDate.isBefore(rangeEnd)) {
-                if (nextDate.isBefore(rangeStart)) {
+            while (next && nextStartDate.isBefore(rangeEnd)) {
+                if (nextStartDate.isBefore(rangeStart)) {
                     next = expand.next();
                     if (next === undefined) {
                         break;
                     }
-                    nextDate = moment(next.toJSDate());
+                    nextStartDate = moment(next.toJSDate());
+                    nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
                     continue;
                 }
 
-                const newEventObject = {
-                    title: eventObject.title,
-                    description: eventObject.description,
-                    location: eventObject.location,
-                    start: nextDate.format("YYYY-MM-DDTHH:mm:ss"),
-                    startDate: !event.isDate ? nextDate.format("YYYY-MM-DD") : undefined,
-                    startTime: !event.isDate ? nextDate.format("HH:mm:ss") : undefined,
-                    end: nextDate.hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("YYYY-MM-DDTHH:mm:ss"),
-                    endDate: !event.isDate ? nextDate.format("YYYY-MM-DD") : undefined,
-                    endTime: !event.isDate ? nextDate.hour(eventObject.endTime.split(":")[0]).minute(eventObject.endTime.split(":")[1]).second(eventObject.endTime.split(":")[2]).format("HH:mm:ss") : undefined,
-                    jCalEvent: vevent
-                }
+                const recurringEventObjects = buildEventObjects(
+                    baseEventObject,
+                    nextStartDate,
+                    nextEndDate,
+                    eventLengthInDays,
+                    event.startDate.isDate
+                );
 
-                eventList.push(newEventObject);
+                eventList = eventList.concat(recurringEventObjects);
 
                 next = expand.next();
-                nextDate = moment(next.toJSDate());
+                if (next === undefined) {
+                    break;
+                }
+                nextStartDate = moment(next.toJSDate());
+                nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
             }
+        }
+        return eventList;
+    }
+
+    function buildEventObjects(baseEventObject, startDate, endDate, eventLengthInDays, isDate) {
+
+        let eventList = [];
+
+        if (eventLengthInDays > 1) {
+            const firstEventObject = buildEventObjects(
+                baseEventObject,
+                startDate,
+                moment(startDate).endOf("day"),
+                1,
+                isDate
+            )
+            eventList = eventList.concat(firstEventObject);
+
+            for (let i = 1; i < eventLengthInDays - 1; i++) {
+                let newRecurringStartDate = moment(startDate).add(i, 'day').startOf("day");
+                let newRecurringEndDate = newRecurringStartDate.endOf("day");
+
+                const inBetweenEventObject = buildEventObjects(
+                    baseEventObject,
+                    newRecurringStartDate,
+                    newRecurringEndDate,
+                    1,
+                    true
+                );
+
+                eventList = eventList.concat(inBetweenEventObject);
+            }
+
+            const lastEventObject = buildEventObjects(
+                baseEventObject,
+                moment(endDate).startOf("day"),
+                endDate,
+                1,
+                isDate
+            )
+
+            eventList = eventList.concat(lastEventObject);
+        } else {
+            const newEventObject = {
+                ...baseEventObject,
+                start: startDate.format("YYYY-MM-DDTHH:mm:ss"),
+                startDate: !isDate ? startDate.format("YYYY-MM-DD") : undefined,
+                startTime: !isDate ? startDate.format("HH:mm:ss") : undefined,
+                end: endDate.format("YYYY-MM-DDTHH:mm:ss"),
+                endDate: !isDate ? endDate.format("YYYY-MM-DD") : undefined,
+                endTime: !isDate ? endDate.format("HH:mm:ss") : undefined,
+                isDate: isDate
+            }
+
+            eventList.push(newEventObject);
         }
 
         return eventList;
     }
 
     function sortAndClean(eventList) {
+        // TODO: Filter out clones
         // Sort events by start time
+
+        const duplicates = new Set();
+
         let cleanEventList = eventList.sort(function (a, b) {
             const aStart = moment(a.start);
+            const aEnd = moment(a.end);
+            const aIsDate = a.isDate;
             const bStart = moment(b.start);
+            const bEnd = moment(b.end);
+            const bIsDate = b.isDate;
+
+            if (moment(aStart).startOf('day').isBefore(moment(bStart).startOf('day'))) {
+                return -1;
+            }
+            if (moment(aStart).startOf('day').isAfter(moment(bStart).startOf('day'))) {
+                return 1;
+            }
+            if (moment(aStart).startOf('day').isSame(moment(bStart).startOf('day')) && aIsDate) {
+                return -1;
+            }
+            if (moment(aStart).startOf('day').isSame(moment(bStart).startOf('day')) && bIsDate) {
+                return 1;
+            }
+            if (moment(aStart).startOf('day').isSame(moment(bStart).startOf('day')) && aIsDate && bIsDate) {
+                duplicates.add(a.start + a.end + a.title + a.location + a.description);
+                return 0;
+            }
             if (aStart.isBefore(bStart)) {
                 return -1;
             }
@@ -403,23 +566,46 @@
                 return 1;
             }
             if (aStart.isSame(bStart)) {
-                return 0;
+                if (aEnd.isBefore(bEnd)) {
+                    return -1;
+                }
+                if (aEnd.isAfter(bEnd)) {
+                    return 1;
+                }
+
+                if (aEnd.isSame(bEnd)) {
+                    duplicates.add(a.start + a.end + a.title + a.location + a.description);
+                    return 0;
+                }
             }
         });
 
+        console.log("Duplicates found: ", duplicates.size, duplicates);
+
         // Remove events that end before the cut off date
-        cleanEventList = cleanEventList.filter(function (event) {
+        cleanEventList = cleanEventList.filter(function (event, pos) {
             const start = moment(event.start).startOf("day");
             const end = moment(event.end).endOf("day");
 
-            let keepEvent = true;
-
-            if (cutOffStartDate !== '') {
-                keepEvent = end.isSameOrAfter(moment(cutOffStartDate));
+            if (pos !== 0 &&
+                cleanEventList[pos - 1].title === event.title &&
+                cleanEventList[pos - 1].location === event.location &&
+                cleanEventList[pos - 1].description === event.description &&
+                cleanEventList[pos - 1].start === event.start &&
+                cleanEventList[pos - 1].end === event.end &&
+                cleanEventList[pos - 1].isDate === event.isDate
+            ) {
+                return false;
             }
 
-            if (cutOffEndDate !== '') {
-                keepEvent = keepEvent && start.isSameOrBefore(moment(cutOffEndDate));
+            let keepEvent = true;
+
+            if (cutOffStartDateString !== '') {
+                keepEvent = end.isSameOrAfter(moment(cutOffStartDateString));
+            }
+
+            if (cutOffEndDateString !== '') {
+                keepEvent = keepEvent && start.isSameOrBefore(moment(cutOffEndDateString));
             }
 
             return keepEvent;
@@ -443,9 +629,29 @@
         // Build table rows
         let currentDate = undefined;
         eventList.forEach(function (eventItem) {
-            const isWholeDayEvent = eventItem.startTime === undefined || eventItem.endTime === undefined;
+            const isWholeDayEvent = eventItem.isDate;
             const isNewDay = currentDate === undefined ||
-                currentDate !== eventItem.startDate;
+                currentDate !== moment(eventItem.start).format("YYYY-MM-DD");
+
+            // Set event time
+            const newStartTimeComponents = isWholeDayEvent ? ["00", "00"] : eventItem.startTime.split(":");
+            const newStartTime = newStartTimeComponents[0] + ":" + newStartTimeComponents[1];
+            const newEndTimeComponents = isWholeDayEvent ? ["23", "59"] : eventItem.endTime.split(":");
+            const newEndTime = newEndTimeComponents[0] + ":" + newEndTimeComponents[1];
+
+            // Add date row if necessary
+            if (isNewDay) {
+                currentDate = moment(eventItem.start).format("YYYY-MM-DD");
+                const dateRow = document.createElement("tr");
+                dateRow.classList.add("day-header-row");
+                dateRow.innerHTML = `
+                    <th colspan="1"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th>
+                    <th colspan="1"><div>Titel</div></th>
+                    <th colspan="1"><div>Ort</div></th>
+                    <th colspan="1"><div>Beschreibung</div></th>
+                    `;
+                tableBody.appendChild(dateRow);
+            }
 
             const row = document.createElement("tr");
             row.classList.add("event-row");
@@ -458,29 +664,9 @@
                 row.classList.add("whole-day-event-row");
             }
 
-            // Set event time
-            const newStartTimeComponents = isWholeDayEvent ? ["00", "00"] : eventItem.startTime.split(":");
-            const newStartTime = newStartTimeComponents[0] + ":" + newStartTimeComponents[1];
-            const newEndTimeComponents = isWholeDayEvent ? ["23", "59"] : eventItem.endTime.split(":");
-            const newEndTime = newEndTimeComponents[0] + ":" + newEndTimeComponents[1];
-
-            // Add date row if necessary
-            if (isNewDay) {
-                currentDate = eventItem.startDate;
-                const dateRow = document.createElement("tr");
-                dateRow.classList.add("day-header-row");
-                dateRow.innerHTML = `
-                   <th colspan="1"><div>${moment(currentDate).format("DD.MM.YYYY")}</div></th>
-                   <th colspan="1"><div>Titel</div></th>
-                   <th colspan="1"><div>Ort</div></th>
-                   <th colspan="1"><div>Beschreibung</div></th>
-                `;
-                tableBody.appendChild(dateRow);
-            }
-
             // Add event row
             row.innerHTML = `
-                <td class="event-time">${isWholeDayEvent ? '' : newStartTime + " - " + newEndTime}</td>
+                <td class="event-time">${isWholeDayEvent ? 'Ganztägig' : newStartTime + " - " + newEndTime}</td>
                 <td class="event-title">${eventItem.title}</td>
                 <td class="event-location">${eventItem.location}</td>
                 <td class="event-description">${eventItem.description}</td>
