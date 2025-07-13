@@ -351,6 +351,7 @@
             event.preventDefault();
             if (calenderInput === null || calenderInput.files === null) { return; }
 
+            // let file = calenderInput.files[0];
             let file = calenderInput.files[0];
             if (!file) { return; }
 
@@ -376,6 +377,7 @@
 
     function convertToHTMLTable(result) {
         const icalContent = result;
+
         const parsedICalContent = ical.parse(icalContent);
         const vcalendar = new ical.Component(parsedICalContent);
         const vevents = vcalendar.getAllSubcomponents("vevent");
@@ -395,11 +397,20 @@
 
     function parseJCalEvent(vevent) {
         const event = new ical.Event(vevent);
+        let startDate = moment(event.startDate.toJSDate());
+        let endDate = moment(event.endDate.toJSDate());
+
+        if (event.startDate.isDate && endDate.hour() === 0 && endDate.minute() === 0 && endDate.second() === 0) {
+            endDate = endDate.subtract(1, 'second');
+        }
 
         let eventList = [];
         // TODO: Fix recurring events with exception dates
+        // TODO: Uhrzeit mehrere Tage + wiederholung -> Ganztags
+        // TODO: Test props + Über tage hinweg mit zeiten
 
-        const eventLengthInDays = moment(event.endDate.toJSDate()).diff(moment(event.startDate.toJSDate()), 'days');
+        // Calc over how many days the event stretches
+        let daysNeededForEvent = Math.ceil(moment(endDate).diff(moment(startDate), 'days', true));
 
         const baseEventObject = {
             title: event.summary === undefined || event.summary === null ? "Kein Titel" : event.summary,
@@ -417,15 +428,16 @@
 
         const newEventObjects = buildEventObjects(
             baseEventObject,
-            moment(event.startDate.toJSDate()),
-            moment(event.endDate.toJSDate()),
-            eventLengthInDays,
+            startDate,
+            endDate,
+            daysNeededForEvent,
             event.startDate.isDate
         )
 
-        // console.log(baseEventObject.title, eventLengthInDays, newEventObjects, newEventObjects.length, event.startDate.isDate);
+        if (event.isRecurring()) {
+            eventList = eventList.concat(newEventObjects);
+        }
 
-        eventList = eventList.concat(newEventObjects);
 
         if (event.isRecurring()) {
             let expand = new ical.RecurExpansion({
@@ -433,22 +445,26 @@
                 dtstart: vevent.getFirstPropertyValue('dtstart')
             });
 
-            let rangeStart = cutOffStartDate !== undefined ? cutOffStartDate : moment(event.startDate.toJSDate()).startOf("day");
+            console.log(vevent);
+
+            let rangeStart = cutOffStartDate !== undefined ? cutOffStartDate : moment(startDate).startOf("day");
             let rangeEnd = cutOffEndDate !== undefined ? cutOffEndDate : moment().add(1, 'year').endOf("day");
 
             let next = expand.next()
-            let originalEndDate = moment(event.endDate.toJSDate());
+            let originalEndDate = moment(endDate);
             let nextStartDate = moment(next.toJSDate());
-            let nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
+            let nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
 
             while (next && nextStartDate.isBefore(rangeEnd)) {
+                console.log("Next start date: " + nextStartDate.format("YYYY-MM-DD HH:mm:ss"), baseEventObject.title, newEventObjects
+                );
                 if (nextStartDate.isBefore(rangeStart)) {
                     next = expand.next();
                     if (next === undefined) {
                         break;
                     }
                     nextStartDate = moment(next.toJSDate());
-                    nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
+                    nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
                     continue;
                 }
 
@@ -456,7 +472,7 @@
                     baseEventObject,
                     nextStartDate,
                     nextEndDate,
-                    eventLengthInDays,
+                    daysNeededForEvent,
                     event.startDate.isDate
                 );
 
@@ -467,7 +483,7 @@
                     break;
                 }
                 nextStartDate = moment(next.toJSDate());
-                nextEndDate = moment(nextStartDate).add(eventLengthInDays, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
+                nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
             }
         }
         return eventList;
@@ -477,7 +493,7 @@
 
         let eventList = [];
 
-        if (eventLengthInDays > 1) {
+        if (eventLengthInDays > 1 || startDate.format("YYYY-MM-DD") !== endDate.format("YYYY-MM-DD")) {
             const firstEventObject = buildEventObjects(
                 baseEventObject,
                 startDate,
@@ -530,10 +546,7 @@
     }
 
     function sortAndClean(eventList) {
-        // TODO: Filter out clones
         // Sort events by start time
-
-        const duplicates = new Set();
 
         let cleanEventList = eventList.sort(function (a, b) {
             const aStart = moment(a.start);
@@ -556,7 +569,6 @@
                 return 1;
             }
             if (moment(aStart).startOf('day').isSame(moment(bStart).startOf('day')) && aIsDate && bIsDate) {
-                duplicates.add(a.start + a.end + a.title + a.location + a.description);
                 return 0;
             }
             if (aStart.isBefore(bStart)) {
@@ -574,13 +586,10 @@
                 }
 
                 if (aEnd.isSame(bEnd)) {
-                    duplicates.add(a.start + a.end + a.title + a.location + a.description);
                     return 0;
                 }
             }
         });
-
-        console.log("Duplicates found: ", duplicates.size, duplicates);
 
         // Remove events that end before the cut off date
         cleanEventList = cleanEventList.filter(function (event, pos) {
