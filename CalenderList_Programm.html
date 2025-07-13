@@ -27,14 +27,24 @@
         flex-direction: column;
         justify-content: center;
         align-items: center;
-        background-color: var(--primary-color);
-        color: white;
         height: fit-content;
-        margin-bottom: 100px;
+        padding-top: 32px;
+    }
+
+    hr {
+        width: 100%;
+        height: 1px;
+        background-color: #cfccccda;
+        border: none;
+        border-radius: 4px;
+    }
+
+    h1 {
+        margin-bottom: 32px;
     }
 
     p {
-        max-width: 650px;
+        max-width: 600px;
     }
 
     italic {
@@ -45,8 +55,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 8px;
-        width: 600px;
+        gap: 10px;
     }
 
     #calender-input li {
@@ -71,12 +80,13 @@
     #calender-input label,
     #calender-input button {
         background-color: var(--primary-color);
-        padding: 5px 10px;
-        border-radius: 5px;
-        border: 1px ridge black;
+        padding: 8px 10px;
+        border-radius: 6px;
+        border: 2px solid #cfccccda;
         font-size: 0.8rem;
         height: auto;
         color: white;
+        box-shadow: 1px 1px 5px 1px #aeadaddb;
     }
 
     #calender-input label:hover,
@@ -105,13 +115,44 @@
         justify-content: space-between;
         align-items: center;
         width: 300px;
-        margin-bottom: 10px;
+        gap: 8px;
+    }
+
+    #date-picker input {
+        width: 100%;
+        height: 32px;
+        padding: 0 8px;
+        border-radius: 6px;
+        border: 2px solid #cfccccda;
+        box-shadow: 1px 1px 5px 1px #dadadadb;
+        font-size: 0.8rem;
+    }
+
+    #date-picker input:hover,
+    #date-picker input:focus-within {
+        border-color: #a5a4a4da;
     }
 
     #file-input-page {
         display: flex;
         flex-direction: column;
         width: 100vw;
+        height: 100%;
+    }
+
+    footer {
+        position: fixed;
+        bottom: 0;
+        width: 100%;
+        background-color: var(--primary-color);
+        color: white;
+        text-align: center;
+        padding: 20px 0;
+        border-top: 1px solid #a5a4a4da;
+    }
+
+    a {
+        color: white;
     }
 
     #file-input {
@@ -192,40 +233,68 @@
     }
 
     tr:not(.is-new-day) td {
-        border-top: 1px solid var(--primary-color);
+        border-top: 1px solid #cfccccda;
     }
 
     td.event-time {
         white-space: nowrap;
     }
+
+    #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: flex-end;
+        gap: 32px;
+        margin-bottom: 8px;
+    }
 </style>
 
 <body>
     <div id="file-input-page">
+        <div id="top"></div>
         <div id="header">
-            <h2>Kyle&apos;s Kalenderlisten-Generator</h2>
+            <h1>Kalenderlisten Generator</h1>
         </div>
         <div id="file-input">
+            <div id="controls">
+                <div style="display: flex; flex-direction: column; gap: 8px; height: fit-content;">
+                    <p>Zeitraum der Liste:</p>
+                    <div id="date-picker">
+                        <input type="date" name="start-date-picker-input" id="start-date-picker-input">
+                        <p> bis </p>
+                        <input type="date" name="end-date-picker-input" id="end-date-picker-input">
+                    </div>
+                </div>
+
+                <div id="calender-input">
+                    <label id="file-input-label" for="calender">Bitte wähle eine ICS Datei aus</label>
+                    <input type="file" id="calender" name="calender" accept=".ics" style="display: none;">
+                    <button id="reset-button">Zurücksetzen</button><button id="convert-button">Umwandeln</button>
+                </div>
+            </div>
+            <hr>
+            <br /><br />
+            <h3 text-align="left" style="width:575px">Anleitung</h3>
             <p>
-                <italic>Dieses Tool erstellt eine HTML-Tabelle aus einer ICS Kalenderdatei. Lade die ICS Datei hoch und
-                    klicke auf "Umwandeln". Um die Listenansicht als PDF zu erhalten, drucke die Tabelle aus als PDF
-                    aus.
-                    Dies kann einfach über die Tastenkombination "Strg + P" erfolgen.</italic>
+                Dieses Tool erstellt eine Auflistung aller Termine aus einer ICS Kalenderdatei. Standardmäßig ist die
+                Liste auf den Zeitraum vom letzten Jahr bis zum nächsten Jahr begrenzt.
+                <br /><br />
+                Klicke auf "Datei auswählen" und wähle eine ICS Datei aus. Danach kannst du den Zeitraum der Liste
+                anpassen, indem du ein Start- und Enddatum auswählst.
+                <br /><br />
+                Klicke dann auf "Umwandeln" um die Liste zu erstellen. Um die Listenansicht als PDF zu erhalten, drucke
+                die Tabelle aus als PDF
+                aus.
+                Dies kann einfach über die Tastenkombination "Strg + P" erfolgen.
                 <br /><br /><br /><br />
             </p>
-            <p>Hier kannst du einen Zeitraum auswählen, in dem die Kalenderliste erstellt werden soll:</p>
-            <div id="date-picker">
-                <input type="date" name="start-date-picker-input" id="start-date-picker-input">
-                <p> bis </p>
-                <input type="date" name="end-date-picker-input" id="end-date-picker-input">
-            </div>
-
-            <div id="calender-input">
-                <label id="file-input-label" for="calender">Bitte wähle eine ICS Datei aus</label>
-                <input type="file" id="calender" name="calender" accept=".ics" style="display: none;">
-                <button id="reset-button">Zurücksetzen</button><button id="convert-button">Umwandeln</button>
-            </div>
         </div>
+        <footer>
+            Made by <a href="https://www.kyleklus.de">Kyle Klus</a>
+            <br>
+            <div>MIT License 2024</div>
+        </footer>
 
     </div>
     <div id="calender-table" style="display: none;">
@@ -274,8 +343,118 @@
 <script type="module">
     import ical from "https://unpkg.com/ical.js/dist/ical.min.js";
     import moment from 'https://cdn.jsdelivr.net/npm/moment@2.30.1/+esm';
-    import { DateTime } from 'https://cdn.jsdelivr.net/npm/luxon@2.3.0/+esm';
-    import { rrulestr } from 'https://cdn.jsdelivr.net/npm/rrule@2.6.8/+esm';
+
+    // The IcalExpander is copied from https://github.com/mifi/ical-expander/tree/master
+    class IcalExpander {
+        constructor(opts) {
+            this.maxIterations = opts.maxIterations != null ? opts.maxIterations : 1000;
+            this.skipInvalidDates = opts.skipInvalidDates != null ? opts.skipInvalidDates : false;
+
+            this.jCalData = ical.parse(opts.ics);
+            this.component = new ical.Component(this.jCalData);
+            this.events = this.component.getAllSubcomponents('vevent').map(vevent => new ical.Event(vevent));
+
+            if (this.skipInvalidDates) {
+                this.events = this.events.filter((evt) => {
+                    try {
+                        evt.startDate.toJSDate();
+                        evt.endDate.toJSDate();
+                        return true;
+                    } catch (err) {
+                        // skipping events with invalid time
+                        return false;
+                    }
+                });
+            }
+        }
+
+        between(after, before) {
+            function isEventWithinRange(startTime, endTime) {
+                return (!after || endTime >= after.getTime()) &&
+                    (!before || startTime <= before.getTime());
+            }
+
+            function getTimes(eventOrOccurrence) {
+                const startTime = eventOrOccurrence.startDate.toJSDate().getTime();
+                let endTime = eventOrOccurrence.endDate.toJSDate().getTime();
+
+                // If it is an all day event, the end date is set to 00:00 of the next day
+                // So we need to make it be 23:59:59 to compare correctly with the given range
+                if (eventOrOccurrence.endDate.isDate && (endTime > startTime)) {
+                    endTime -= 1;
+                }
+
+                return { startTime, endTime };
+            }
+
+            const exceptions = [];
+
+            this.events.forEach((event) => {
+                if (event.isRecurrenceException()) exceptions.push(event);
+            });
+
+            const ret = {
+                events: [],
+                occurrences: [],
+            };
+
+            this.events.filter(e => !e.isRecurrenceException()).forEach((event) => {
+                const exdates = [];
+
+                event.component.getAllProperties('exdate').forEach((exdateProp) => {
+                    const exdate = exdateProp.getFirstValue();
+                    exdates.push(exdate.toJSDate().getTime());
+                });
+
+                // Recurring event is handled differently
+                if (event.isRecurring()) {
+                    const iterator = event.iterator();
+
+                    let next;
+                    let i = 0;
+
+                    do {
+                        i += 1;
+                        next = iterator.next();
+                        if (next) {
+                            const occurrence = event.getOccurrenceDetails(next);
+
+                            const { startTime, endTime } = getTimes(occurrence);
+
+                            const isOccurrenceExcluded = exdates.indexOf(startTime) !== -1;
+
+                            // TODO check that within same day?
+                            const exception = exceptions.find(ex => ex.uid === event.uid && ex.recurrenceId.toJSDate().getTime() === occurrence.startDate.toJSDate().getTime());
+
+                            // We have passed the max date, stop
+                            if (before && startTime > before.getTime()) break;
+
+                            // Check that we are within our range
+                            if (isEventWithinRange(startTime, endTime)) {
+                                if (exception) {
+                                    ret.events.push(exception);
+                                } else if (!isOccurrenceExcluded) {
+                                    ret.occurrences.push(occurrence);
+                                }
+                            }
+                        }
+                    }
+                    while (next && (!this.maxIterations || i < this.maxIterations));
+
+                    return;
+                }
+
+                // Non-recurring event:
+                const { startTime, endTime } = getTimes(event);
+
+                if (isEventWithinRange(startTime, endTime)) {
+                    ret.events.push(event)
+                };
+            });
+
+            return ret;
+        }
+    }
 
     const TITLE_TAG = "summary";
     const DESCRIPTION_TAG = "description";
@@ -357,7 +536,7 @@
 
             const reader = new FileReader();
             reader.onload = function (e) {
-                convertToHTMLTable(e.target.result);
+                convertICSToHTMLTable(e.target.result);
             };
             reader.readAsText(file);
         });
@@ -375,125 +554,98 @@
         cutOffEndDate = undefined;
     }
 
-    function convertToHTMLTable(result) {
-        const icalContent = result;
+    function convertICSToHTMLTable(ics) {
+        if (ics === undefined || ics === null || ics === '') { return; }
 
-        const parsedICalContent = ical.parse(icalContent);
-        const vcalendar = new ical.Component(parsedICalContent);
-        const vevents = vcalendar.getAllSubcomponents("vevent");
+        // Define range for reoccurring events
+        let rangeStart = cutOffStartDate !== undefined ? cutOffStartDate.toDate() : moment().subtract(1, 'year').startOf("day").toDate();
+        let rangeEnd = cutOffEndDate !== undefined ? cutOffEndDate.toDate() : moment().add(1, 'year').endOf("day").toDate();
 
+        // Parse the ICS file into events
+        const icalExpander = new IcalExpander({ ics, maxIterations: 0, skipInvalidDates: true });
+        const eventsResult = icalExpander.between(rangeStart, rangeEnd);
         let eventList = [];
 
-        for (let i = 0; i < vevents.length; i++) {
-            const vevent = vevents[i];
+        // Parse the events and occurrences into a list of human-readable event objects
+        for (let i = 0; i < eventsResult.events.length; i++) {
+            const event = eventsResult.events[i];
 
-            eventList = eventList.concat(parseJCalEvent(vevent));
+            eventList = eventList.concat(parseJCalEventOccurrences(event));
         }
 
+        for (let i = 0; i < eventsResult.occurrences.length; i++) {
+            const occurrence = eventsResult.occurrences[i];
+
+            eventList = eventList.concat(parseJCalEventOccurrences(occurrence, true));
+        }
+
+        if (eventList.length === 0) {
+            alert("Keine Ereignisse gefunden im angegebenen Zeitraum.");
+            return;
+        }
+
+        // Sort and clean the event list
         eventList = sortAndClean(eventList);
 
+        // Build the HTML table from the event list
         buildTable(eventList);
     }
 
-    function parseJCalEvent(vevent) {
-        const event = new ical.Event(vevent);
+    function parseJCalEventOccurrences(event, isOccurrence = false) {
+        // Check if the event is valid
+        if (event === undefined || event === null || !event.startDate || !event.endDate) {
+            return [];
+        }
+
+        const eventData = isOccurrence ? event.item : event;
         let startDate = moment(event.startDate.toJSDate());
         let endDate = moment(event.endDate.toJSDate());
+        let isDate = event.startDate.isDate;
 
+        // If the event is an all day event, we need to set the end date to the end of the day of the previous day
         if (event.startDate.isDate && endDate.hour() === 0 && endDate.minute() === 0 && endDate.second() === 0) {
             endDate = endDate.subtract(1, 'second');
         }
 
-        let eventList = [];
-        // TODO: Fix recurring events with exception dates
-        // TODO: Uhrzeit mehrere Tage + wiederholung -> Ganztags
-        // TODO: Test props + Über tage hinweg mit zeiten
+        // Calc over how many days the event needs to be displayed
+        let daysNeededForEvent = Math.min(Math.ceil(moment(endDate).diff(moment(startDate), 'days', true)), 1);
 
-        // Calc over how many days the event stretches
-        let daysNeededForEvent = Math.ceil(moment(endDate).diff(moment(startDate), 'days', true));
-
+        // Init non datetime data
         const baseEventObject = {
-            title: event.summary === undefined || event.summary === null ? "Kein Titel" : event.summary,
-            description: event.description === undefined || event.description === null ? "Keine Beschreibung" : event.description,
-            location: event.location === undefined || event.location === null ? "Kein Ort" : event.location,
+            title: eventData.summary === undefined || eventData.summary === null ? "Kein Titel" : eventData.summary,
+            description: eventData.description === undefined || eventData.description === null ? "Keine Beschreibung" : eventData.description,
+            location: eventData.location === undefined || eventData.location === null ? "Kein Ort" : eventData.location,
             start: undefined,
             startDate: undefined,
             startTime: undefined,
             end: undefined,
             endDate: undefined,
             endTime: undefined,
-            isDate: false,
-            jCalEvent: vevent
+            isDate: undefined,
         };
 
+        // Split event into days for displaying it as a list
         const newEventObjects = buildEventObjects(
             baseEventObject,
             startDate,
             endDate,
             daysNeededForEvent,
-            event.startDate.isDate
+            isDate
         )
 
-        if (event.isRecurring()) {
-            eventList = eventList.concat(newEventObjects);
-        }
-
-
-        if (event.isRecurring()) {
-            let expand = new ical.RecurExpansion({
-                component: vevent,
-                dtstart: vevent.getFirstPropertyValue('dtstart')
-            });
-
-            console.log(vevent);
-
-            let rangeStart = cutOffStartDate !== undefined ? cutOffStartDate : moment(startDate).startOf("day");
-            let rangeEnd = cutOffEndDate !== undefined ? cutOffEndDate : moment().add(1, 'year').endOf("day");
-
-            let next = expand.next()
-            let originalEndDate = moment(endDate);
-            let nextStartDate = moment(next.toJSDate());
-            let nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
-
-            while (next && nextStartDate.isBefore(rangeEnd)) {
-                console.log("Next start date: " + nextStartDate.format("YYYY-MM-DD HH:mm:ss"), baseEventObject.title, newEventObjects
-                );
-                if (nextStartDate.isBefore(rangeStart)) {
-                    next = expand.next();
-                    if (next === undefined) {
-                        break;
-                    }
-                    nextStartDate = moment(next.toJSDate());
-                    nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
-                    continue;
-                }
-
-                const recurringEventObjects = buildEventObjects(
-                    baseEventObject,
-                    nextStartDate,
-                    nextEndDate,
-                    daysNeededForEvent,
-                    event.startDate.isDate
-                );
-
-                eventList = eventList.concat(recurringEventObjects);
-
-                next = expand.next();
-                if (next === undefined) {
-                    break;
-                }
-                nextStartDate = moment(next.toJSDate());
-                nextEndDate = moment(nextStartDate).add(daysNeededForEvent, 'days').hour(originalEndDate.hour()).minute(originalEndDate.minute()).second(originalEndDate.second());
-            }
-        }
-        return eventList;
+        return newEventObjects;
     }
 
     function buildEventObjects(baseEventObject, startDate, endDate, eventLengthInDays, isDate) {
-
         let eventList = [];
+        // Check if the event is valid
+        if (!startDate || !endDate || eventLengthInDays === 0 || startDate.isAfter(endDate) || baseEventObject === undefined || baseEventObject === null) {
+            return eventList;
+        }
 
+        // Check if the event is a multi day event
         if (eventLengthInDays > 1 || startDate.format("YYYY-MM-DD") !== endDate.format("YYYY-MM-DD")) {
+            // If the event is a multi day event, we need to create an event object for each day
             const firstEventObject = buildEventObjects(
                 baseEventObject,
                 startDate,
@@ -501,6 +653,7 @@
                 1,
                 isDate
             )
+
             eventList = eventList.concat(firstEventObject);
 
             for (let i = 1; i < eventLengthInDays - 1; i++) {
@@ -528,6 +681,7 @@
 
             eventList = eventList.concat(lastEventObject);
         } else {
+            // If the event is not a multi day event, we can create a single event object
             const newEventObject = {
                 ...baseEventObject,
                 start: startDate.format("YYYY-MM-DDTHH:mm:ss"),
@@ -546,8 +700,7 @@
     }
 
     function sortAndClean(eventList) {
-        // Sort events by start time
-
+        // Sort events by start time and prioritize whole day events
         let cleanEventList = eventList.sort(function (a, b) {
             const aStart = moment(a.start);
             const aEnd = moment(a.end);
@@ -596,6 +749,7 @@
             const start = moment(event.start).startOf("day");
             const end = moment(event.end).endOf("day");
 
+            // remove duplicates
             if (pos !== 0 &&
                 cleanEventList[pos - 1].title === event.title &&
                 cleanEventList[pos - 1].location === event.location &&
@@ -607,6 +761,7 @@
                 return false;
             }
 
+            // Check if the event is within the cut off dates
             let keepEvent = true;
 
             if (cutOffStartDateString !== '') {
