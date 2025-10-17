@@ -42,6 +42,7 @@
 
     p {
         max-width: 600px;
+        margin: 0;
     }
 
     italic {
@@ -120,20 +121,11 @@
 
     #header {
         text-align: center;
-        width: 100vw;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: fit-content;
-        padding-top: 32px;
+        margin: 5rem 0 2.5rem 0;
     }
 
     #controls {
         display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
         flex-direction: column;
         gap: 1rem;
         margin: 2rem 0;
@@ -217,13 +209,8 @@
         background-color: var(--primary-color);
     }
 
-
     #calender-input ol {
         padding-left: 0;
-    }
-
-    p {
-        margin: 0;
     }
 
     #date-picker {
@@ -263,7 +250,6 @@
         flex-direction: column;
         align-items: center;
         overflow: hidden;
-        gap: 4rem;
         height: 100%;
     }
 
@@ -376,7 +362,7 @@
             </div>
             <div id="file-input">
                 <div id="controls" class="card">
-                    <div style="display: flex; flex-direction: row; gap: 1.5rem; height: fit-content;">
+                    <div style="display: flex; flex-direction: row; gap: 2rem; height: fit-content;">
                         <div style="display: flex; flex-direction: column; gap: 8px; height: fit-content;">
                             <p>Zeitraum der Liste:</p>
                             <div id="date-picker">
@@ -387,12 +373,12 @@
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 8px; height: fit-content;">
                             <p>Akzent Farbe:</p>
-                            <input style="height:34px; width: 100px;" type="color" id="primary-color-picker"
+                            <input style="height:34px; width: 120px;" type="color" id="primary-color-picker"
                                 name="primary-color-picker" value="#6F003C" />
                         </div>
                         <div style="display: flex; flex-direction: column; gap: 8px; height: fit-content;">
                             <p>Hintergrund Farbe:</p>
-                            <input style="height:34px; width: 100px;" type="color" id="secondary-color-picker"
+                            <input style="height:34px; width: 120px;" type="color" id="secondary-color-picker"
                                 name="secondary-color-picker" value="#ffffff" />
                         </div>
                     </div>
